@@ -11,7 +11,7 @@ print("Available columns for plotting:")
 for i, col in enumerate(data_columns):
     print(f"{i}: {col}")
 
-# === 2. Wybierz kolumny do rysowania ===
+# === 2. Wybierz kolumny ===
 user_input = input("Enter the column numbers to plot (e.g., 0,1,2,3:10,14:24,29): ")
 
 def parse_indices(input_str):
@@ -28,7 +28,7 @@ def parse_indices(input_str):
 selected_indices = parse_indices(user_input)
 selected_columns = [data_columns[i] for i in selected_indices]
 
-# === 3. Grupuj kolumny według jednostek ===
+# === 3. Grupowanie po jednostkach ===
 unit_groups = {}
 for col in selected_columns:
     if "[" in col and "]" in col:
@@ -37,7 +37,7 @@ for col in selected_columns:
         unit = "unknown"
     unit_groups.setdefault(unit, []).append(col)
 
-# === 4. Twórz wykres ===
+# === 4. Inicjalizacja wykresu ===
 fig = go.Figure()
 color_pool = [
     "#1f77b4", "#ff7f0e", "#217021", "#d62728", "#9467bd",
@@ -49,12 +49,14 @@ color_index = 0
 yaxis_count = 1
 yaxis_map = {}
 
-# === 5. Dodaj linie ===
+# === 5. Przypisywanie osi i dodawanie trace'ów ===
 for unit, cols in unit_groups.items():
-    axis_id = f'y{yaxis_count}' if yaxis_count > 1 else 'y'
+    axis_id = 'y' if yaxis_count == 1 else f'y{yaxis_count}'
     yaxis_map[unit] = axis_id
+    print(f"[MAP] jednostka '{unit}' → {axis_id}")  # DEBUG
 
     for col in cols:
+        print(f"  ↳ Dodaję kolumnę: {col} do osi {axis_id}")  # DEBUG
         fig.add_trace(go.Scatter(
             x=time,
             y=df[col],
@@ -64,6 +66,7 @@ for unit, cols in unit_groups.items():
             yaxis=axis_id
         ))
         color_index += 1
+
     yaxis_count += 1
 
 # === 6. Layout bazowy ===
@@ -75,11 +78,11 @@ layout = dict(
     height=700
 )
 
-# === 7. Dynamiczne, estetyczne Y-axes ===
+# === 7. Poprawne przypisanie layoutu do każdej osi ===
 for i, (unit, axis_id) in enumerate(yaxis_map.items()):
-    axis_key = f'yaxis{"" if axis_id == "y" else axis_id[1:]}'
+    axis_key = 'yaxis' if axis_id == 'y' else f'yaxis{axis_id[1:]}'
     side = 'left' if i % 2 == 0 else 'right'
-    position = 0.05 + i * 0.07  # rozsuń osie
+    position = 0.05 + i * 0.07
 
     layout[axis_key] = dict(
         title=dict(text=unit, font=dict(color=color_pool[i % len(color_pool)])),
@@ -87,11 +90,14 @@ for i, (unit, axis_id) in enumerate(yaxis_map.items()):
         side=side,
         position=position,
         showgrid=False,
-        tickfont=dict(color=color_pool[i % len(color_pool)])
+        tickfont=dict(color=color_pool[i % len(color_pool)]),
+        autorange=True
     )
+
+    print(f"  ↳ Ustawiam layout dla {axis_key} na pozycji {position:.2f} ({side})")  # DEBUG
 
 fig.update_layout(layout)
 
-# === 8. Zapisz HTML ===
+# === 8. Zapis do HTML ===
 fig.write_html("interaktywny_wykres.html")
-print("✅ Zapisano: interaktywny_wykres.html – otwórz w przeglądarce.")
+print("\n✅ Wykres zapisany jako 'interaktywny_wykres.html'. Otwórz w przeglądarce.")
