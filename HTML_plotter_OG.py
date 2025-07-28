@@ -11,7 +11,7 @@ print("Available columns for plotting:")
 for i, col in enumerate(data_columns):
     print(f"{i}: {col}")
 
-# === 2. Wybierz kolumny ===
+# === 2. Wybór kolumn ===
 user_input = input("Enter the column numbers to plot (e.g., 0,1,2,3:10,14:24,29): ")
 
 def parse_indices(input_str):
@@ -49,14 +49,15 @@ color_index = 0
 yaxis_count = 1
 yaxis_map = {}
 
-# === 5. Przypisywanie osi i dodawanie trace'ów ===
+# === 5. Dodawanie trace’ów i mapowanie osi ===
 for unit, cols in unit_groups.items():
     axis_id = 'y' if yaxis_count == 1 else f'y{yaxis_count}'
-    yaxis_map[unit] = axis_id
-    print(f"[MAP] jednostka '{unit}' → {axis_id}")  # DEBUG
+    axis_key = 'yaxis' if axis_id == 'y' else f'yaxis{axis_id[1:]}'
+    yaxis_map[unit] = (axis_id, axis_key)
+    print(f"[MAP] Jednostka '{unit}' → trace: {axis_id}, layout: {axis_key}")
 
     for col in cols:
-        print(f"  ↳ Dodaję kolumnę: {col} do osi {axis_id}")  # DEBUG
+        print(f"  ↳ Dodaję: {col} → {axis_id}")
         fig.add_trace(go.Scatter(
             x=time,
             y=df[col],
@@ -78,11 +79,10 @@ layout = dict(
     height=700
 )
 
-# === 7. Poprawne przypisanie layoutu do każdej osi ===
-for i, (unit, axis_id) in enumerate(yaxis_map.items()):
-    axis_key = 'yaxis' if axis_id == 'y' else f'yaxis{axis_id[1:]}'
+# === 7. Rozkład osi bez overlay, z pozycjami
+for i, (unit, (axis_id, axis_key)) in enumerate(yaxis_map.items()):
     side = 'left' if i % 2 == 0 else 'right'
-    position = 0.05 + i * 0.07
+    position = 0.05 + i * 0.07  # rozsuwamy o 7% szerokości na każdą oś
 
     layout[axis_key] = dict(
         title=dict(text=unit, font=dict(color=color_pool[i % len(color_pool)])),
@@ -94,10 +94,10 @@ for i, (unit, axis_id) in enumerate(yaxis_map.items()):
         autorange=True
     )
 
-    print(f"  ↳ Ustawiam layout dla {axis_key} na pozycji {position:.2f} ({side})")  # DEBUG
+    print(f"  ↳ Layout: {axis_key} → {side} @ {position:.2f}")
 
 fig.update_layout(layout)
 
 # === 8. Zapis do HTML ===
 fig.write_html("interaktywny_wykres.html")
-print("\n✅ Wykres zapisany jako 'interaktywny_wykres.html'. Otwórz w przeglądarce.")
+print("\n✅ Gotowe! Wykres zapisany jako 'interaktywny_wykres.html'")
