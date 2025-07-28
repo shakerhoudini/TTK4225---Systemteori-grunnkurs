@@ -1,22 +1,19 @@
 import pandas as pd
 import plotly.graph_objects as go
 
-# Wczytaj dane
+# === 1. Wczytaj dane ===
 df = pd.read_csv("DemoProject_state0_28.07.2025_10-37.csv")
 
-# Kolumny
 time = df[df.columns[0]]
 data_columns = df.columns[1:]
 
-# Pokaz dostępne kolumny
 print("Available columns for plotting:")
 for i, col in enumerate(data_columns):
     print(f"{i}: {col}")
 
-# Pobierz input od usera
+# === 2. Wybierz kolumny do rysowania ===
 user_input = input("Enter the column numbers to plot (e.g., 0,1,2,3:10,14:24,29): ")
 
-# Parsowanie indeksów
 def parse_indices(input_str):
     indices = set()
     parts = input_str.split(',')
@@ -31,7 +28,7 @@ def parse_indices(input_str):
 selected_indices = parse_indices(user_input)
 selected_columns = [data_columns[i] for i in selected_indices]
 
-# Grupuj po jednostkach
+# === 3. Grupuj kolumny według jednostek ===
 unit_groups = {}
 for col in selected_columns:
     if "[" in col and "]" in col:
@@ -40,10 +37,8 @@ for col in selected_columns:
         unit = "unknown"
     unit_groups.setdefault(unit, []).append(col)
 
-# Tworzenie wykresu
+# === 4. Twórz wykres ===
 fig = go.Figure()
-
-# Kolory
 color_pool = [
     "#1f77b4", "#ff7f0e", "#217021", "#d62728", "#9467bd",
     "#8c564b", "#e377c2", "#7f7f7f", "#e7e724", "#17becf",
@@ -52,9 +47,9 @@ color_pool = [
 
 color_index = 0
 yaxis_count = 1
-yaxis_map = {}  # jednostka → yaxisN
+yaxis_map = {}
 
-# Dodaj ślady
+# === 5. Dodaj linie ===
 for unit, cols in unit_groups.items():
     axis_id = f'y{yaxis_count}' if yaxis_count > 1 else 'y'
     yaxis_map[unit] = axis_id
@@ -71,31 +66,32 @@ for unit, cols in unit_groups.items():
         color_index += 1
     yaxis_count += 1
 
-# Layout: oś X
+# === 6. Layout bazowy ===
 layout = dict(
     title="D20TIC0188: 10% Downstep",
     xaxis=dict(title=df.columns[0]),
     hovermode='x unified',
-    width=1200,
+    width=1400,
     height=700
 )
 
-# Layout: dynamiczne Y-axes z przesunięciem i kolorami
+# === 7. Dynamiczne, estetyczne Y-axes ===
 for i, (unit, axis_id) in enumerate(yaxis_map.items()):
-    layout[f'yaxis{"" if axis_id == "y" else axis_id[1:]}'] = dict(
-        title=unit,
-        anchor='free',
-        overlaying='y',
-        side='left' if i % 2 == 0 else 'right',
-        position=0.05 + 0.05 * i,
+    axis_key = f'yaxis{"" if axis_id == "y" else axis_id[1:]}'
+    side = 'left' if i % 2 == 0 else 'right'
+    position = 0.05 + i * 0.07  # rozsuń osie
+
+    layout[axis_key] = dict(
+        title=dict(text=unit, font=dict(color=color_pool[i % len(color_pool)])),
+        anchor='x',
+        side=side,
+        position=position,
         showgrid=False,
-        tickfont=dict(color=color_pool[i % len(color_pool)]),
-        titlefont=dict(color=color_pool[i % len(color_pool)])
+        tickfont=dict(color=color_pool[i % len(color_pool)])
     )
 
-# Zastosuj layout
 fig.update_layout(layout)
 
-# Zapisz jako interaktywny HTML
+# === 8. Zapisz HTML ===
 fig.write_html("interaktywny_wykres.html")
-print("✅ Zapisano: interaktywny_wykres.html")
+print("✅ Zapisano: interaktywny_wykres.html – otwórz w przeglądarce.")
