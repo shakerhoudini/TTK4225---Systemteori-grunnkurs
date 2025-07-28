@@ -25,6 +25,7 @@ def parse_indices(s):
         else:
             idx.add(int(part))
     return sorted(idx)
+
 selected = parse_indices(user_input)
 selected_columns = [data_columns[i] for i in selected]
 
@@ -52,8 +53,6 @@ for unit, cols in unit_groups.items():
     axis_id  = 'y'  if yaxis_count == 1 else f'y{yaxis_count}'
     axis_key = 'yaxis' if axis_id == 'y' else f'yaxis{axis_id[1:]}'
     yaxis_map[unit] = (axis_id, axis_key)
-    print(f"[MAP] Jednostka '{unit}' → {axis_id}")
-
     for col in cols:
         fig.add_trace(go.Scatter(
             x=time,
@@ -63,9 +62,7 @@ for unit, cols in unit_groups.items():
             marker=dict(color=color_pool[color_index % len(color_pool)]),
             yaxis=axis_id
         ))
-        print(f"  ↳ {col} → {axis_id}")
         color_index += 1
-
     yaxis_count += 1
 
 # === 6. Layout bazowy ===
@@ -77,9 +74,9 @@ layout = dict(
     height=700
 )
 
-# === 7. Konfiguracja osi z overlaying + offset ===
-left_offset = 0
-right_offset = 0
+# === 7. Konfiguracja osi z overlaying + fractional position ===
+left_count = 0
+right_count = 0
 
 for i, (unit, (axis_id, axis_key)) in enumerate(yaxis_map.items()):
     side = 'left' if i % 2 == 0 else 'right'
@@ -92,19 +89,16 @@ for i, (unit, (axis_id, axis_key)) in enumerate(yaxis_map.items()):
         autorange=True
     )
     if axis_id != 'y':
-        # nakładamy tę oś na główną
         axis_cfg['overlaying'] = 'y'
-        # odsuwamy oś o X pikseli
-        if side == 'left':
-            left_offset += 1
-            axis_cfg['offset'] = left_offset * 50
-        else:
-            right_offset += 1
-            axis_cfg['offset'] = right_offset * 50
+    # zamiast 'offset' używamy fractional 'position'
+    if side == 'left':
+        axis_cfg['position'] = left_count * 0.05
+        left_count += 1
+    else:
+        axis_cfg['position'] = 1 - right_count * 0.05
+        right_count += 1
 
     layout[axis_key] = axis_cfg
-    off = axis_cfg.get('offset', 0)
-    print(f"  ↳ {axis_key}: side={side}, overlay={'yes' if axis_id!='y' else 'no'}, offset={off}")
 
 fig.update_layout(layout)
 
